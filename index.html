@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>みんなの日本語 語彙アプリ</title>
+<style>
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1828;
+    --card: #221f35;
+    --accent: #ff6b6b;
+    --accent2: #ffd93d;
+    --accent3: #6bcb77;
+    --text: #fffffe;
+    --muted: #a7a9be;
+    --border: #2e2b45;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1a1828 0%, #221f35 100%);
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--accent2);
+    margin-bottom: 12px;
+  }
+  .header h1 span { color: var(--accent); }
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 10px; }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 16px 10px 40px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; }
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 16px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: inherit;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  /* LESSON SELECTOR */
+  .lesson-bar {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .lesson-bar::-webkit-scrollbar { display: none; }
+  .lesson-chip {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .lesson-chip.active {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #111;
+    font-weight: 700;
+  }
+  /* PANEL CONTENTS */
+  .panel { display: none; padding: 12px 16px; }
+  .panel.active { display: block; }
+  /* WORD LIST */
+  .word-count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .word-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: transform .15s, border-color .15s;
+  }
+  .word-card:active { transform: scale(0.98); }
+  .word-card.expanded { border-color: var(--accent); }
+  .word-main { display: flex; align-items: baseline; gap: 8px; }
+  .word-kana { font-size: 17px; font-weight: 600; color: var(--text); }
+  .word-kanji { font-size: 13px; color: var(--muted); }
+  .word-lesson-tag {
+    margin-left: auto;
+    font-size: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 6px;
+    color: var(--muted);
+  }
+  .word-zh {
+    display: none;
+    font-size: 14px;
+    color: var(--accent2);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .word-card.expanded .word-zh { display: block; }
+  /* FLASHCARD */
+  .fc-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .fc-controls select {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+  }
+  .btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    padding: 8px 18px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity .15s;
+    flex-shrink: 0;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn.secondary { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); }
+  .btn.green { background: var(--accent3); }
+  /* FLASHCARD CARD */
+  .fc-arena { perspective: 1000px; margin-bottom: 16px; }
+  .fc-card-wrap {
+    width: 100%;
+    padding-bottom: 60%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .5s cubic-bezier(.4,0,.2,1);
+  }
+  .fc-card-wrap.flipped { transform: rotateY(180deg); }
+  .fc-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  .fc-front {
+    background: linear-gradient(135deg, #221f35 0%, #2a2545 100%);
+    border: 2px solid var(--accent);
+    box-shadow: 0 8px 32px rgba(255,107,107,.15);
+  }
+  .fc-back {
+    background: linear-gradient(135deg, #1e2d1e 0%, #1a2e1a 100%);
+    border: 2px solid var(--accent3);
+    box-shadow: 0 8px 32px rgba(107,203,119,.15);
+    transform: rotateY(180deg);
+  }
+  .fc-label { font-size: 11px; color: var(--muted); margin-bottom: 10px; letter-spacing: .1em; text-transform: uppercase; }
+  .fc-word { font-size: 32px; font-weight: 700; line-height: 1.3; }
+  .fc-sub { font-size: 14px; color: var(--muted); margin-top: 6px; }
+  .fc-zh { font-size: 20px; color: var(--accent2); line-height: 1.5; }
+  .fc-progress { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+  .fc-progress strong { color: var(--text); }
+  .fc-btns { display: flex; gap: 8px; justify-content: center; }
+  .fc-hint { text-align: center; font-size: 11px; color: var(--muted); margin-top: 8px; }
+  /* QUIZ */
+  .quiz-header { margin-bottom: 16px; }
+  .quiz-score-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  .score-correct { color: var(--accent3); font-weight: 700; }
+  .score-wrong { color: var(--accent); font-weight: 700; }
+  .quiz-progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .quiz-progress-fill {
+    height: 100%;
+    background: var(--accent2);
+    border-radius: 2px;
+    transition: width .3s;
+  }
+  .quiz-question {
+    background: var(--card);
+    border: 2px solid var(--accent);
+    border-radius: 20px;
+    padding: 28px 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .quiz-q-label { font-size: 11px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+  .quiz-q-word { font-size: 28px; font-weight: 700; }
+  .quiz-q-kana { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .quiz-opt {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .quiz-opt:active { transform: scale(0.97); }
+  .quiz-opt.correct { background: #1a3a1e; border-color: var(--accent3); color: var(--accent3); font-weight: 600; }
+  .quiz-opt.wrong { background: #3a1a1a; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .quiz-opt:disabled { cursor: default; }
+  .quiz-result {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .quiz-result .big { font-size: 64px; margin-bottom: 8px; }
+  .quiz-result h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .quiz-result p { color: var(--muted); margin-bottom: 20px; font-size: 15px; }
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 0 12px;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 0;
+    font-size: 10px;
+    color: var(--muted);
+    transition: color .15s;
+    font-family: inherit;
+    background: none;
+    border: none;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item .nav-icon { font-size: 22px; }
+  /* EMPTY */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty .big { font-size: 48px; margin-bottom: 8px; }
+  /* CHIPS for quiz mode */
+  .mode-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .mode-chip {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+  }
+  .mode-chip.active {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #111;
+    font-weight: 700;
+  }
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MNN語彙">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0f0e17">
+</head>
+<body>
+
+<div class="header">
+  <h1>みんなの日本語 <span>語彙</span></h1>
+  <div class="search-wrap" id="search-area">
+    <span class="icon">🔍</span>
+    <input type="search" id="searchInput" placeholder="かな・漢字・中国語で検索..." autocomplete="off">
+  </div>
+</div>
+
+<div class="lesson-bar" id="lessonBar"></div>
+
+<!-- WORD LIST PANEL -->
+<div class="panel active" id="panel-list">
+  <div class="word-count" id="wordCount"></div>
+  <div id="wordList"></div>
+</div>
+
+<!-- FLASHCARD PANEL -->
+<div class="panel" id="panel-flash">
+  <div class="fc-controls">
+    <select id="fcLesson">
+      <option value="all">全課</option>
+    </select>
+    <select id="fcMode">
+      <option value="kana2zh">かな → 中国語</option>
+      <option value="zh2kana">中国語 → かな</option>
+
+    </select>
+    <button class="btn" onclick="startFlash()">開始</button>
+  </div>
+  <div class="fc-progress" id="fcProgress"></div>
+  <div class="fc-arena" id="fcArena" onclick="flipCard()">
+    <div class="fc-card-wrap" id="fcCardWrap">
+      <div class="fc-face fc-front" id="fcFront"></div>
+      <div class="fc-face fc-back" id="fcBack"></div>
+    </div>
+  </div>
+  <div class="fc-hint" id="fcHint">カードをタップで裏返す</div>
+  <div class="fc-btns" id="fcBtns" style="display:none">
+    <button class="btn secondary" onclick="fcNext(false)">❌ もう一度</button>
+    <button class="btn green" onclick="fcNext(true)">✓ 覚えた</button>
+  </div>
+</div>
+
+<!-- QUIZ PANEL -->
+<div class="panel" id="panel-quiz">
+  <div class="fc-controls">
+    <select id="qzLesson">
+      <option value="all">全課</option>
+    </select>
+    <div class="mode-chips" id="qzModeChips">
+      <button class="mode-chip active" data-mode="kana2zh" onclick="selectQzMode(this)">かな→中</button>
+      <button class="mode-chip" data-mode="zh2kana" onclick="selectQzMode(this)">中→かな</button>
+    </div>
+  </div>
+  <button class="btn" style="width:100%;margin-bottom:16px" onclick="startQuiz()">クイズ開始</button>
+  <div id="quizArea"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" data-panel="list" onclick="switchPanel('list', this)">
+    <span class="nav-icon">📖</span>単語一覧
+  </button>
+  <button class="nav-item" data-panel="flash" onclick="switchPanel('flash', this)">
+    <span class="nav-icon">🃏</span>フラッシュ
+  </button>
+  <button class="nav-item" data-panel="quiz" onclick="switchPanel('quiz', this)">
+    <span class="nav-icon">🎯</span>クイズ
+  </button>
+</div>
+
+<script src="vocab.js"></script>
+<script>
+// State
+let currentLesson = 'all';
+let currentPanel = 'list';
+let searchQuery = '';
+
+// --- LESSONS ---
+const lessons = [...new Set(VOCAB.map(w => w.lesson))].sort((a,b) => {
+  const n = s => parseInt(s.replace('第','').replace('課',''));
+  return n(a) - n(b);
+});
+
+function buildLessonBar() {
+  const bar = document.getElementById('lessonBar');
+  const all = document.createElement('button');
+  all.className = 'lesson-chip active';
+  all.textContent = '全課';
+  all.onclick = () => selectLesson('all', all);
+  bar.appendChild(all);
+  lessons.forEach(l => {
+    const c = document.createElement('button');
+    c.className = 'lesson-chip';
+    c.textContent = l.replace('第','').replace('課','L');
+    c.dataset.lesson = l;
+    c.onclick = () => selectLesson(l, c);
+    bar.appendChild(c);
+  });
+  // populate selects
+  ['fcLesson','qzLesson'].forEach(id => {
+    const sel = document.getElementById(id);
+    lessons.forEach(l => {
+      const o = document.createElement('option');
+      o.value = l; o.textContent = l;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function selectLesson(l, el) {
+  currentLesson = l;
+  document.querySelectorAll('.lesson-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+// --- FILTER ---
+function norm(s) {
+  return s.replace(/[\s　〔〕（）()【】［］]/g, '').toLowerCase();
+}
+
+function getFiltered() {
+  let data = VOCAB;
+  if (currentLesson !== 'all') data = data.filter(w => w.lesson === currentLesson);
+  if (searchQuery) {
+    const q = norm(searchQuery);
+    data = data.filter(w =>
+      norm(w.kana).includes(q) || norm(w.kanji).includes(q) || norm(w.zh).includes(q)
+    );
+  }
+  return data;
+}
+
+// --- LIST ---
+function renderList() {
+  const data = getFiltered();
+  const list = document.getElementById('wordList');
+  document.getElementById('wordCount').textContent = `${data.length} 語`;
+  if (!data.length) {
+    list.innerHTML = '<div class="empty"><div class="big">🔍</div>見つかりません</div>';
+    return;
+  }
+  list.innerHTML = data.map((w, i) => `
+    <div class="word-card" onclick="toggleCard(this)">
+      <div class="word-main">
+        <span class="word-kana">${w.kana}</span>
+        ${w.kanji ? `<span class="word-kanji">${w.kanji}</span>` : ''}
+        <span class="word-lesson-tag">${w.lesson}</span>
+      </div>
+      <div class="word-zh">${w.zh}</div>
+    </div>
+  `).join('');
+}
+
+function toggleCard(el) {
+  el.classList.toggle('expanded');
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  renderList();
+});
+
+// --- FLASHCARD ---
+let fcDeck = [], fcIndex = 0, fcFlipped = false, fcCorrect = 0, fcMode = 'kana2zh';
+
+function startFlash() {
+  const lesson = document.getElementById('fcLesson').value;
+  fcMode = document.getElementById('fcMode').value;
+  let data = lesson === 'all' ? [...VOCAB] : VOCAB.filter(w => w.lesson === lesson);
+  // shuffle
+  fcDeck = data.sort(() => Math.random() - .5);
+  fcIndex = 0; fcCorrect = 0;
+  renderFcCard();
+}
+
+function renderFcCard() {
+  if (!fcDeck.length) {
+    document.getElementById('fcArena').style.display = 'none';
+    document.getElementById('fcProgress').textContent = 'まず「開始」を押してください';
+    document.getElementById('fcBtns').style.display = 'none';
+    document.getElementById('fcHint').textContent = '';
+    return;
+  }
+  if (fcIndex >= fcDeck.length) {
+    document.getElementById('fcArena').style.display = 'none';
+    document.getElementById('fcBtns').style.display = 'none';
+    document.getElementById('fcHint').textContent = '';
+    document.getElementById('fcProgress').innerHTML =
+      `🎉 完了！ ${fcCorrect} / ${fcDeck.length} 正解`;
+    return;
+  }
+  const w = fcDeck[fcIndex];
+  document.getElementById('fcArena').style.display = 'block';
+  fcFlipped = false;
+  document.getElementById('fcCardWrap').classList.remove('flipped');
+  document.getElementById('fcBtns').style.display = 'none';
+  document.getElementById('fcHint').textContent = 'カードをタップで裏返す';
+  document.getElementById('fcProgress').innerHTML =
+    `<strong>${fcIndex+1}</strong> / ${fcDeck.length}　✓ ${fcCorrect}`;
+
+  let frontHTML, backHTML;
+  if (fcMode === 'kana2zh') {
+    frontHTML = `<div class="fc-label">かな</div><div class="fc-word">${w.kana}</div>${w.kanji?`<div class="fc-sub">${w.kanji}</div>`:''}`;
+    backHTML = `<div class="fc-label">中国語</div><div class="fc-zh">${w.zh}</div><div class="fc-sub" style="margin-top:10px;color:#a7a9be">${w.kana}</div>`;
+  } else if (fcMode === 'zh2kana') {
+    frontHTML = `<div class="fc-label">中国語</div><div class="fc-zh" style="font-size:22px">${w.zh}</div>`;
+    backHTML = `<div class="fc-label">かな</div><div class="fc-word">${w.kana}</div>${w.kanji?`<div class="fc-sub">${w.kanji}</div>`:''}`;
+  } else {
+    const front = w.kanji || w.kana;
+    frontHTML = `<div class="fc-label">漢字</div><div class="fc-word">${front}</div>`;
+    backHTML = `<div class="fc-label">中国語</div><div class="fc-zh">${w.zh}</div><div class="fc-sub" style="margin-top:10px;color:#a7a9be">${w.kana}</div>`;
+  }
+  document.getElementById('fcFront').innerHTML = frontHTML;
+  document.getElementById('fcBack').innerHTML = backHTML;
+}
+
+function flipCard() {
+  if (!fcDeck.length || fcIndex >= fcDeck.length) return;
+  fcFlipped = !fcFlipped;
+  document.getElementById('fcCardWrap').classList.toggle('flipped', fcFlipped);
+  if (fcFlipped) {
+    document.getElementById('fcBtns').style.display = 'flex';
+    document.getElementById('fcHint').textContent = '';
+  }
+}
+
+function fcNext(ok) {
+  if (ok) {
+    fcCorrect++;
+    fcIndex++;
+    renderFcCard();
+  } else {
+    // Reset current card to front for retry
+    fcFlipped = false;
+    document.getElementById('fcCardWrap').classList.remove('flipped');
+    document.getElementById('fcBtns').style.display = 'none';
+    document.getElementById('fcHint').textContent = 'カードをタップで裏返す';
+  }
+}
+
+// --- QUIZ ---
+let qzQuestions = [], qzIndex = 0, qzCorrect = 0, qzMode = 'kana2zh', qzAnswered = false, qzWrongThis = false;
+
+function selectQzMode(el) {
+  document.querySelectorAll('.mode-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  qzMode = el.dataset.mode;
+}
+
+function startQuiz() {
+  const lesson = document.getElementById('qzLesson').value;
+  let data = lesson === 'all' ? [...VOCAB] : VOCAB.filter(w => w.lesson === lesson);
+  if (data.length < 4) {
+    document.getElementById('quizArea').innerHTML = '<div class="empty"><div class="big">⚠️</div>語彙が少なすぎます（4語以上必要）</div>';
+    return;
+  }
+  data = data.sort(() => Math.random() - .5).slice(0, 20);
+  qzQuestions = data;
+  qzIndex = 0; qzCorrect = 0; qzAnswered = false; qzWrongThis = false;
+  renderQuiz();
+}
+
+function renderQuiz() {
+  if (qzIndex >= qzQuestions.length) {
+    const pct = Math.round(qzCorrect / qzQuestions.length * 100);
+    const emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '💪';
+    document.getElementById('quizArea').innerHTML = `
+      <div class="quiz-result">
+        <div class="big">${emoji}</div>
+        <h2>${qzCorrect} / ${qzQuestions.length} 正解</h2>
+        <p>正解率 ${pct}%</p>
+        <button class="btn" onclick="startQuiz()">もう一度</button>
+      </div>`;
+    return;
+  }
+  const w = qzQuestions[qzIndex];
+  const all = VOCAB;
+  // Generate wrong answers
+  let pool = all.filter(x => x.lesson !== w.lesson || x.kana !== w.kana);
+  pool = pool.sort(() => Math.random() - .5).slice(0, 3);
+  const choices = [...pool, w].sort(() => Math.random() - .5);
+
+  let qText, getOpt;
+  if (qzMode === 'kana2zh') {
+    qText = `<div class="quiz-q-label">次の語の意味は？</div><div class="quiz-q-word">${w.kana}</div>${w.kanji?`<div class="quiz-q-kana">${w.kanji}</div>`:''}`;
+    getOpt = x => x.zh.split('、')[0].replace(/（.*?）/g,'').trim().slice(0,20);
+  } else {
+    qText = `<div class="quiz-q-label">次の中国語に対応する語は？</div><div class="quiz-q-word" style="font-size:22px">${w.zh.split('、')[0].slice(0,15)}</div>`;
+    getOpt = x => x.kana;
+  }
+  const correctOpt = getOpt(w);
+
+  // store choices on window for retry
+  window._qzChoices = choices;
+  window._qzGetOpt = getOpt;
+  window._qzCorrectOpt = correctOpt;
+  window._qzQText = qText;
+
+  const pct = qzIndex / qzQuestions.length * 100;
+  document.getElementById('quizArea').innerHTML = `
+    <div class="quiz-header">
+      <div class="quiz-score-bar">
+        <span>${qzIndex+1} / ${qzQuestions.length}</span>
+        <span>✓ <span class="score-correct">${qzCorrect}</span> &nbsp; ✗ <span class="score-wrong">${qzIndex - qzCorrect}</span></span>
+      </div>
+      <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="quiz-question">${qText}</div>
+    <div class="quiz-options" id="qzOpts">
+      ${choices.map((x) => {
+        const opt = getOpt(x);
+        return `<button class="quiz-opt" onclick="answerQuiz(this, '${escQ(opt)}', '${escQ(correctOpt)}')">${opt}</button>`;
+      }).join('')}
+    </div>
+    <div id="qzFeedback"></div>
+  `;
+}
+
+function escQ(s) {
+  return s.replace(/'/g,"\x27").replace(/"/g,"&quot;");
+}
+
+function answerQuiz(btn, chosen, correct) {
+  if (qzAnswered) return;
+  qzAnswered = true;
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach(b => { b.disabled = true; });
+  const isCorrect = chosen === correct;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    if (!qzWrongThis) qzCorrect++;
+    qzWrongThis = false;
+    // Auto-advance after correct
+    setTimeout(() => {
+      qzIndex++;
+      qzAnswered = false;
+      renderQuiz();
+    }, 700);
+  } else {
+    btn.classList.add('wrong');
+    // Highlight the correct answer
+    opts.forEach(b => {
+      if (b.textContent.trim() === correct) b.classList.add('correct');
+    });
+    qzWrongThis = true;
+    // Show retry button
+    const fb = document.getElementById('qzFeedback');
+    if (fb) {
+      fb.innerHTML = `<div style="text-align:center;margin-top:12px">
+        <div style="color:var(--accent);font-size:13px;margin-bottom:10px">❌ 不正解。もう一度挑戦！</div>
+        <button class="btn" onclick="retryQuiz()">もう一度</button>
+      </div>`;
+    }
+  }
+}
+
+function retryQuiz() {
+  // Re-render same question with new shuffled choices
+  qzAnswered = false;
+  const w = qzQuestions[qzIndex];
+  const all = VOCAB;
+  let pool = all.filter(x => x.lesson !== w.lesson || x.kana !== w.kana);
+  pool = pool.sort(() => Math.random() - .5).slice(0, 3);
+  const choices = [...pool, w].sort(() => Math.random() - .5);
+  const getOpt = window._qzGetOpt;
+  const correctOpt = window._qzCorrectOpt;
+  const qText = window._qzQText;
+
+  const pct = qzIndex / qzQuestions.length * 100;
+  document.getElementById('quizArea').innerHTML = `
+    <div class="quiz-header">
+      <div class="quiz-score-bar">
+        <span>${qzIndex+1} / ${qzQuestions.length}</span>
+        <span>✓ <span class="score-correct">${qzCorrect}</span> &nbsp; ✗ <span class="score-wrong">${qzIndex - qzCorrect}</span></span>
+      </div>
+      <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="quiz-question">${qText}</div>
+    <div class="quiz-options" id="qzOpts">
+      ${choices.map((x) => {
+        const opt = getOpt(x);
+        return `<button class="quiz-opt" onclick="answerQuiz(this, '${escQ(opt)}', '${escQ(correctOpt)}')">${opt}</button>`;
+      }).join('')}
+    </div>
+    <div id="qzFeedback" style="text-align:center;margin-top:8px;font-size:12px;color:var(--muted)">再挑戦中…</div>
+  `;
+}
+
+// --- PANEL SWITCH ---
+function switchPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  currentPanel = name;
+  // show/hide search & lesson bar
+  const searchArea = document.getElementById('search-area');
+  const lessonBar = document.getElementById('lessonBar');
+  if (name === 'list') {
+    searchArea.style.display = 'block';
+    lessonBar.style.display = 'flex';
+  } else {
+    searchArea.style.display = 'none';
+    lessonBar.style.display = 'none';
+  }
+}
+
+// Init
+buildLessonBar();
+renderList();
+// Hide arena until started
+document.getElementById('fcArena').style.display = 'none';
+document.getElementById('fcProgress').textContent = '課を選んで「開始」を押してください';
+document.getElementById('fcHint').textContent = '';
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
