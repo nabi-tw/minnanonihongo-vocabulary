@@ -1,4 +1,4 @@
-const CACHE = "mnn-v2";
+const CACHE = "mnn-v3";
 const ASSETS = ["./", "./index.html", "./vocab.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
